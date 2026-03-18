@@ -15,6 +15,8 @@ namespace VMKeyboard
         public Form1()
         {
             InitializeComponent();
+            Version ver = new Version(Application.ProductVersion);
+            this.Text = "VMKeyboard " + ver.Major + "." + ver.Minor;
         }
 
         private void Button_Type_Click(object sender, EventArgs e)
