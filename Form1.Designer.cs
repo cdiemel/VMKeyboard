@@ -71,7 +71,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.Text_Main.Location = new System.Drawing.Point(3, 3);
             this.Text_Main.Name = "Text_Main";
-            this.Text_Main.Size = new System.Drawing.Size(454, 284);
+            this.Text_Main.Size = new System.Drawing.Size(454, 34);
             this.Text_Main.TabIndex = 3;
             this.Text_Main.Text = "";
             // 
@@ -81,7 +81,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel1.Controls.Add(this.Text_Timeout);
             this.panel1.Controls.Add(this.Button_Type);
-            this.panel1.Location = new System.Drawing.Point(1, 308);
+            this.panel1.Location = new System.Drawing.Point(1, 58);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(483, 41);
             this.panel1.TabIndex = 4;
@@ -94,14 +94,14 @@
             this.panel2.Controls.Add(this.Text_Main);
             this.panel2.Location = new System.Drawing.Point(12, 12);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(460, 290);
+            this.panel2.Size = new System.Drawing.Size(460, 40);
             this.panel2.TabIndex = 5;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 361);
+            this.ClientSize = new System.Drawing.Size(484, 111);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Name = "Form1";
