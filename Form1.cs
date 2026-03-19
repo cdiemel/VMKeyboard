@@ -29,18 +29,20 @@ namespace VMKeyboard
         private async Task TypeContentAsync(string content)
         {
             await Task.Delay((int)this.Text_Timeout.Value * 1000);
-            //SendKeys.Send(content);
-            string badChars = "{}[]()+^%~";
-            // Simulate typing the content
-            foreach (char c in content)
-            {
-                string value = c.ToString();
-                if (badChars.Contains(c))
-                {
-                    value = "{" + c + "}";
-                }
-                SendKeys.Send(value);
-            }
+
+            KeyboardEmulator.TypeText(content);
+            ////SendKeys.Send(content);
+            //string badChars = "{}[]()+^%~";
+            //// Simulate typing the content
+            //foreach (char c in content)
+            //{
+            //    string value = c.ToString();
+            //    if (badChars.Contains(c))
+            //    {
+            //        value = "{" + c + "}";
+            //    }
+            //    SendKeys.Send(value);
+            //}
         }
     }
 }
