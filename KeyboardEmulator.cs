@@ -203,10 +203,9 @@ namespace VMKeyboard
         [DllImport("kernel32.dll")]
         static extern uint GetLastError();
 
-        public static void SendChecked(INPUT input)
+        public static void SendChecked(INPUT[] input)
         {
-            var arr = new[] { input };
-            uint sent = SendInput(1, arr, Marshal.SizeOf<INPUT>());
+            uint sent = SendInput(1, input, Marshal.SizeOf<INPUT>());
             if (sent == 0)
             {
                 uint err = GetLastError();
@@ -230,11 +229,19 @@ namespace VMKeyboard
     {
 
 
-        private static void SendScanCode(ushort scanCode, bool keyUp = false)
+        private static void SendScanCode(ushort scanCode, bool keyUp = false, bool extendedKey = false)
         {
-            Console.WriteLine(scanCode);
 
-            var input = new INPUT
+
+            uint flags = NativeMethods.KEYEVENTF_SCANCODE |
+                             (extendedKey ? NativeMethods.KEYEVENTF_EXTENDEDKEY : 0) |
+                             (keyUp ? NativeMethods.KEYEVENTF_KEYUP : 0);
+
+
+            INPUT[] inputs = new INPUT[2];
+
+            inputs[0] = new INPUT
+
             {
                 type = NativeMethods.INPUT_KEYBOARD,
                 U = new InputUnion
@@ -243,8 +250,7 @@ namespace VMKeyboard
                     {
                         wVk = 0,
                         wScan = scanCode,
-                        dwFlags = NativeMethods.KEYEVENTF_SCANCODE |
-                          (keyUp ? NativeMethods.KEYEVENTF_KEYUP : 0),
+                        dwFlags = flags,
                         time = 0,
                         dwExtraInfo = UIntPtr.Zero
                     }
@@ -252,8 +258,14 @@ namespace VMKeyboard
             };
 
 
-            try {
-                NativeMethods.SendChecked(input);
+            inputs[1] = inputs[0];
+            inputs[1].U.ki.dwFlags = flags | NativeMethods.KEYEVENTF_KEYUP;
+
+
+
+            try
+            {
+                NativeMethods.SendChecked(inputs);
             } catch (Exception e) {
                 Console.WriteLine(e);
             }
@@ -263,15 +275,18 @@ namespace VMKeyboard
         public static void TypeChar(char c)
         {
 
-            bool shift = false;
-            ushort scan = ScanCodeMap.Resolve(c, out shift);
+            //bool shift = false;
+            ushort scan = ScanCodeMap.Resolve(c, out bool shift);
 
             if (shift) SendScanCode(0x2A);      // Shift down
+            Thread.Sleep(10); // human‑like pacing
             SendScanCode(scan);                 // Key down
+            Thread.Sleep(10); // human‑like pacing
             SendScanCode(scan, keyUp: true);    // Key up
-            if (shift) SendScanCode(0x2A, true); // Shift up
+            Thread.Sleep(10); // human‑like pacing
+            if (shift) SendScanCode(0x2A, keyUp: true); // Shift up
 
-            Thread.Sleep(17); // human‑like pacing
+            Thread.Sleep(10); // human‑like pacing
         }
 
         public static void TypeText(string text)
