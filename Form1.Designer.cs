@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.Button_Type = new System.Windows.Forms.Button();
             this.Text_Timeout = new System.Windows.Forms.NumericUpDown();
             this.Text_Main = new System.Windows.Forms.RichTextBox();
@@ -104,6 +105,7 @@
             this.ClientSize = new System.Drawing.Size(484, 111);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
             this.Text = "VMKeyboard v1.0";
             ((System.ComponentModel.ISupportInitialize)(this.Text_Timeout)).EndInit();
