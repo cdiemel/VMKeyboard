@@ -143,12 +143,31 @@ namespace VMKeyboard
         }
     }
 
-
     [StructLayout(LayoutKind.Sequential)]
     internal struct INPUT
     {
         public uint type;
-        public KEYBDINPUT ki;
+        public InputUnion U;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    internal struct InputUnion
+    {
+        [FieldOffset(0)] public MOUSEINPUT mi;
+        [FieldOffset(0)] public KEYBDINPUT ki;
+        [FieldOffset(0)] public HARDWAREINPUT hi;
+
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct MOUSEINPUT
+    {
+        public int dx;
+        public int dy;
+        public uint mouseData;
+        public uint dwFlags;
+        public uint time;
+        public UIntPtr dwExtraInfo;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -158,8 +177,18 @@ namespace VMKeyboard
         public ushort wScan;
         public uint dwFlags;
         public uint time;
-        public IntPtr dwExtraInfo;
+        public UIntPtr dwExtraInfo;
+        // KEYBDINPUT fields and behavior are documented by Microsoft. [2](https://github.com/AbishekPonmudi/PlanqX_EDR-Endpoint-Detection-and-Response)
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct HARDWAREINPUT
+    {
+        public uint uMsg;
+        public ushort wParamL;
+        public ushort wParamH;
+    }
+
 
     internal static class NativeMethods
     {
@@ -170,9 +199,30 @@ namespace VMKeyboard
             int cbSize
         );
 
-        public const int INPUT_KEYBOARD = 1;
-        public const uint KEYEVENTF_KEYUP = 0x0002;
-        public const uint KEYEVENTF_SCANCODE = 0x0008;
+
+        [DllImport("kernel32.dll")]
+        static extern uint GetLastError();
+
+        public static void SendChecked(INPUT input)
+        {
+            var arr = new[] { input };
+            uint sent = SendInput(1, arr, Marshal.SizeOf<INPUT>());
+            if (sent == 0)
+            {
+                uint err = GetLastError();
+                throw new InvalidOperationException($"SendInput failed. GetLastError={err}");
+            }
+        }
+
+        internal const uint INPUT_MOUSE = 0;
+        internal const uint INPUT_KEYBOARD = 1;
+        internal const uint INPUT_HARDWARE = 2;
+
+        internal const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
+        internal const uint KEYEVENTF_KEYUP = 0x0002;
+        internal const uint KEYEVENTF_UNICODE = 0x0004;
+        internal const uint KEYEVENTF_SCANCODE = 0x0008;
+
     }
 
 
@@ -182,23 +232,31 @@ namespace VMKeyboard
 
         private static void SendScanCode(ushort scanCode, bool keyUp = false)
         {
+            Console.WriteLine(scanCode);
 
             var input = new INPUT
             {
                 type = NativeMethods.INPUT_KEYBOARD,
-                ki = new KEYBDINPUT
+                U = new InputUnion
                 {
-                    wVk = 0,
-                    wScan = scanCode,
-                    dwFlags = NativeMethods.KEYEVENTF_SCANCODE |
-                              (keyUp ? NativeMethods.KEYEVENTF_KEYUP : 0),
-                    time = 0,
-                    dwExtraInfo = IntPtr.Zero
+                    ki = new KEYBDINPUT
+                    {
+                        wVk = 0,
+                        wScan = scanCode,
+                        dwFlags = NativeMethods.KEYEVENTF_SCANCODE |
+                          (keyUp ? NativeMethods.KEYEVENTF_KEYUP : 0),
+                        time = 0,
+                        dwExtraInfo = UIntPtr.Zero
+                    }
                 }
             };
 
 
-            NativeMethods.SendInput(1, new[] { input }, Marshal.SizeOf<INPUT>());
+            try {
+                NativeMethods.SendChecked(input);
+            } catch (Exception e) {
+                Console.WriteLine(e);
+            }
         }
 
 
@@ -208,45 +266,12 @@ namespace VMKeyboard
             bool shift = false;
             ushort scan = ScanCodeMap.Resolve(c, out shift);
 
-
-            //switch (c)
-            //{
-            //    // Number row (Shift + number)
-            //    case '!': shift = true; scan = 0x02; break; // 1
-            //    case '@': shift = true; scan = 0x03; break; // 2
-            //    case '#': shift = true; scan = 0x04; break; // 3
-            //    case '$': shift = true; scan = 0x05; break; // 4
-            //    case '%': shift = true; scan = 0x06; break; // 5
-            //    case '^': shift = true; scan = 0x07; break; // 6
-            //    case '&': shift = true; scan = 0x08; break; // 7
-            //    case '*': shift = true; scan = 0x09; break; // 8
-            //    case '(': shift = true; scan = 0x0A; break; // 9
-            //    case ')': shift = true; scan = 0x0B; break; // 0
-
-            //    // Punctuation (Shift variants)
-            //    case '_': shift = true; scan = 0x0C; break; // -
-            //    case '+': shift = true; scan = 0x0D; break; // =
-            //    case '{': shift = true; scan = 0x1A; break; // [
-            //    case '}': shift = true; scan = 0x1B; break; // ]
-            //    case '|': shift = true; scan = 0x2B; break; // \
-            //    case ':': shift = true; scan = 0x27; break; // ;
-            //    case '"': shift = true; scan = 0x28; break; // '
-            //    case '<': shift = true; scan = 0x33; break; // ,
-            //    case '>': shift = true; scan = 0x34; break; // .
-            //    case '?': shift = true; scan = 0x35; break; // /
-
-            //    default:
-            //        scan = ScanCodeMap.Resolve(c, out shift);
-            //        break;
-            //}
-
-
             if (shift) SendScanCode(0x2A);      // Shift down
             SendScanCode(scan);                 // Key down
             SendScanCode(scan, keyUp: true);    // Key up
             if (shift) SendScanCode(0x2A, true); // Shift up
 
-            Thread.Sleep(5); // human‑like pacing
+            Thread.Sleep(17); // human‑like pacing
         }
 
         public static void TypeText(string text)
