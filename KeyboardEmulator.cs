@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Forms;
 
 
 namespace VMKeyboard
@@ -227,11 +228,13 @@ namespace VMKeyboard
 
     internal class KeyboardEmulator
     {
+        static readonly Random _rng = new Random();
 
+        private static void KeyDelay(int minMs=5, int maxMs=25, bool specialKey=false) => Thread.Sleep(_rng.Next(minMs, maxMs + (specialKey ? 5 : 0)));
 
         private static void SendScanCode(ushort scanCode, bool keyUp = false, bool extendedKey = false)
         {
-
+            KeyDelay(5,10);
 
             uint flags = NativeMethods.KEYEVENTF_SCANCODE |
                              (extendedKey ? NativeMethods.KEYEVENTF_EXTENDEDKEY : 0) |
@@ -278,15 +281,20 @@ namespace VMKeyboard
             //bool shift = false;
             ushort scan = ScanCodeMap.Resolve(c, out bool shift);
 
-            if (shift) SendScanCode(0x2A);      // Shift down
-            Thread.Sleep(10); // human‑like pacing
+            if (shift)
+            {
+                SendScanCode(0x2A);
+                Thread.Sleep(5);
+            }
             SendScanCode(scan);                 // Key down
-            Thread.Sleep(10); // human‑like pacing
             SendScanCode(scan, keyUp: true);    // Key up
-            Thread.Sleep(10); // human‑like pacing
-            if (shift) SendScanCode(0x2A, keyUp: true); // Shift up
 
-            Thread.Sleep(10); // human‑like pacing
+            if (shift)
+            {
+                SendScanCode(0x2A, keyUp: true); 
+                Thread.Sleep(5);
+            }
+
         }
 
         public static void TypeText(string text)
